@@ -3,21 +3,31 @@ import numpy as np
 import streamlit as st
 import tensorflow as tf
 from PIL import Image
+from huggingface_hub import hf_hub_download
 
 st.set_page_config(page_title="Skin Cancer Detection", page_icon="🩹")
 
 @st.cache_resource
 def load_artifacts():
-    model = tf.keras.models.load_model("best_skin_cancer_model.keras")
+    # ============================================================
+    # ⚠️ EDIT THIS LINE: put your Hugging Face repo name below
+    #    (find it in your browser address bar, e.g. "johndoe/skin-cancer-model")
+    # ============================================================
+    HF_REPO = "YOUR_USERNAME/YOUR_REPO"
+
+    # Download the model from Hugging Face (cached after first run)
+    model_path = hf_hub_download(
+        repo_id=HF_REPO,
+        filename="best_skin_cancer_model.keras"
+    )
+    model = tf.keras.models.load_model(model_path)
+
     with open("class_names.json") as f:
         raw = json.load(f)
 
-    # --- FIX for Error 2 ---
-    # class_names.json may be saved as a LIST  ["benign", "malignant"]
-    # or as a DICT   {"0": "benign", "1": "malignant"}.
-    # The old code crashed with "0/1 must correspond to the correct class
-    # names" when the JSON was a dict and we looked it up with an integer.
-    # This converts either format into a list ordered by class index.
+    # class_names.json may be a LIST  ["benign", "malignant"]
+    # or a DICT   {"0": "benign", "1": "malignant"}.
+    # Convert either format into a list ordered by class index.
     if isinstance(raw, dict):
         class_names = [raw[str(i)] for i in sorted(raw.keys(), key=lambda k: int(k))]
     else:
@@ -46,7 +56,6 @@ if uploaded is not None:
     prob = float(model.predict(arr, verbose=0).ravel()[0])
     pred_idx = int(prob >= 0.5)
 
-    # Safety check: make sure the predicted index exists in class_names
     if pred_idx >= len(class_names):
         st.error(f"Model predicted class index {pred_idx}, but class_names.json only has {len(class_names)} entries.")
         st.stop()
