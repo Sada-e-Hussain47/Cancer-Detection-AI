@@ -1,8 +1,3 @@
-Yes. Since your `.keras` model is hosted on Hugging Face, you can download it automatically when the Streamlit app starts instead of keeping the model locally.
-
-Your current `app.py` loads the model from a local file and also expects `class_names.json`. 
-
-### Replace your `app.py` with this
 
 ```python
 import os
